@@ -129,7 +129,7 @@ void Simulator::build_bvh(Mesh& body)
 	stop_watch watch;
 	watch.start();
 	Mesh bvh_body = body;   // for bvh consttruction
-	bvh_body.vertex_extend(0.003);
+	bvh_body.vertex_extend(0.007);
 
 	watch.start();
 	cuda_bvh = new BVHAccel(bvh_body);

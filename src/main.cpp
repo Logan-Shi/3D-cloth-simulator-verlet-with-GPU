@@ -21,15 +21,21 @@ int main(int argc, char** argv)
 
 	Scene* main_scene = Scene::getInstance(argc, argv); //initialize opengl 
 
-	Mesh cloth("../../../resources/cloth/tshirt2/tshirt2.obj", SINGLE_LAYER_NOB);
+	Mesh cloth("../../resources/cloth/dress-victor/dress-victor.obj", SINGLE_LAYER_NOB);
 	cloth.rotation(90, X);   
-	cloth.rotation(-4, Z);
-	cloth.scale(3.33);
-	cloth.translate(0, 1.98, 0.02);  // maybe we can use model matrix to handle this
+	//cloth.rotation(-4, Z);
+	cloth.scale(2.6);
+	cloth.translate(0, 1.98, 0);  // maybe we can use model matrix to handle this
 
-	Mesh body("../../../resources/pose/Female.obj");
-	body.scale(3.226);
-	body.translate(0, 1.8, 0);
+	//Mesh cloth("../../resources/cloth/robe/robe.obj", SINGLE_LAYER_NOB);
+	//cloth.rotation(90, X);
+	////cloth.rotation(-4, Z);
+	//cloth.scale(2);
+	//cloth.translate(0, 1.98, 0);  // maybe we can use model matrix to handle this
+
+	Mesh body("../../resources/pose/Male.obj");
+	body.scale(1.8);
+	body.translate(0, 2.4, 0);
 
 	main_scene->add_cloth(cloth);
 	main_scene->add_body(body);

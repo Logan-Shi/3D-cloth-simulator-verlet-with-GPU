@@ -49,4 +49,14 @@ dir install/bin
 
 or you can use **cmake-gui** to do the job in an interactive way.
 
+# TODO
 
+[ ] collision mechanism
+
+[ ] glsl, need prettier shader
+
+[ ] need a prettier scene
+
+[ ] movable figure
+
+[ ] interactions

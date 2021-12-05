@@ -10,11 +10,11 @@
 
 
 //physics parameter
-__constant__ double spring_structure = 100.0;
+__constant__ double spring_structure = 1000.0;
 __constant__ double spring_bend = 2.0;
 __constant__ float damp = -0.02f; 
 __constant__ float mass = 0.3;
-__constant__ float dt = 1 / 40.0f;
+__constant__ float dt = 1 / 100.0f;
 
 __constant__ float gravit_x = 0.0f;   // in y dir
 __constant__ float gravit_y = -0.00981f;   // in y dir
@@ -42,11 +42,9 @@ __device__ void collision_response_projection(D_BVH bvh,
 		}
 		else
 			collision_force[idx] = glm::vec3(0.0);
-
 	}
 	else
 		collision_force[idx] = glm::vec3(0.0);
-
 }
 
 __device__ glm::vec3 compute_spring_force(int index, glm::vec3* g_pos_in, glm::vec3* g_pos_old_in,
@@ -84,7 +82,6 @@ __device__ glm::vec3 compute_spring_force(int index, glm::vec3* g_pos_in, glm::v
 		force += springForce;
 	}
 	return force;
-
 }
 
 
