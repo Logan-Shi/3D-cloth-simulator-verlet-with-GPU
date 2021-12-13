@@ -11,7 +11,7 @@
 #include "common.h"
 
 using namespace std;
-
+vector<glm::vec3> test(10000);
 __global__ void compute_face_normal(glm::vec3* g_pos_in, unsigned int* cloth_index, const unsigned int cloth_index_size, glm::vec3* cloth_face);   //update cloth face normal
 __global__ void verlet(glm::vec3 * g_pos_in, glm::vec3 * g_pos_old_in, glm::vec3 * g_pos_out, glm::vec3 * g_pos_old_out,
 						unsigned int* CSR_R_STR, s_spring* CSR_C_STR, unsigned int* CSR_R_BD, s_spring* CSR_C_BD,
@@ -84,6 +84,10 @@ void Simulator::init_cloth(Mesh& sim_cloth)
 	safe_cuda(cudaMemcpy(x_cur[0], &tem_vertices[0], vertices_bytes, cudaMemcpyHostToDevice));
 	safe_cuda(cudaMemcpy(x_last[0], &tem_vertices[0], vertices_bytes, cudaMemcpyHostToDevice));
 
+
+	//cudaMemcpy(&test[0], x_cur[0], sizeof(glm::vec3) * sim_cloth.vertices.size(), cudaMemcpyDeviceToHost);
+	//cudaMemcpy(&test, x_cur[1], sizeof(glm::vec3), cudaMemcpyDeviceToHost);
+	//cudaMemcpy(&test, d_collision_force, sizeof(glm::vec3)+1, cudaMemcpyDeviceToHost);
 	//计算normal所需的数据：每个点邻接的面的索引 + 每个面的3个点的索引
 	vector<unsigned int> TEM_CSR_R;
 	vector<unsigned int> TEM_CSR_C_adjface;
@@ -141,11 +145,19 @@ void Simulator::build_bvh(Mesh& body)
 void Simulator::simulate(Mesh* sim_cloth)
 {
 	//cuda kernel compute .........
-	
+	/*
+	for (int i = 0; i<1000; i++)
+	{
+		cuda_verlet(sim_cloth->vertices.size());
+		//cuda_update_vbo(sim_cloth);     // update array buffer for opengl
+		cudaMemcpy(&test[0], x_cur_out, sizeof(glm::vec3) * sim_cloth->vertices.size(), cudaMemcpyDeviceToHost);
+		swap_buffer();
+	}
+	*/
 	cuda_verlet(sim_cloth->vertices.size());
-
-	cuda_update_vbo(sim_cloth);     // update array buffer for opengl
-
+	//	cuda_update_vbo(sim_cloth);     // update array buffer for opengl
+	//test.resize(sim_cloth->vertices.size());
+	cudaMemcpy(&sim_cloth->onestep_vertices[0], x_cur_out, sizeof(glm::vec3) * sim_cloth->vertices.size(), cudaMemcpyDeviceToHost);
 	swap_buffer();
 }
 

@@ -212,6 +212,6 @@ ObjLoader::ObjLoader(const string file):obj_file(file)
 	}
 
 	cout << "vertices size" << vertices.size() << endl;
-
+	onestep_vertices.resize(vertices.size());
 }
 

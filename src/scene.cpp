@@ -32,6 +32,16 @@ bool Scene::start_sim = false;
 static int num_screenshot = 0;
 GLenum GL_MODE = GL_LINE_LOOP;
 bool SAVE_OBJ = false;
+vector<glm::vec4> gap_vertices;
+vector<glm::vec4> old_vertices;
+vector<glm::vec4> new_vertices;
+float oldx = 0;
+float oldy = 0;
+float oldz = 0;
+float newx = 0;
+float newy = 0;
+float newz = 0;
+
 
 
 void Scene::draw_select_vertex()
@@ -67,6 +77,7 @@ Scene* Scene::getInstance(int argc, char** argv)
 
 Scene::Scene(int argc, char** argv)
 {
+	/*
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(width,height);
@@ -78,6 +89,7 @@ Scene::Scene(int argc, char** argv)
 		return;
 	}
 	wglSwapIntervalEXT(0);  // disable Vertical synchronization
+	*/
 }
 
 Scene::~Scene()
@@ -88,13 +100,13 @@ Scene::~Scene()
 void Scene::add_cloth(Mesh& object)
 {
 	cloth = &object;
-	add(object);
+	//add(object);
 }
 
 void Scene::add_body(Mesh& object)
 {
 	body = &object;
-	add(object);
+	//add(object);
 }
 
 void Scene::add(Mesh& object)
@@ -139,10 +151,25 @@ void Scene::add(Mesh& object)
 
 void Scene::render()
 {
+	onRender();
+	/*
 	loadShader(); //InitGL(); //load shader
 
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 	glutDisplayFunc(onRender);
+	pscene->output_vertices = pscene->cloth->vertices;
+	glutDisplayFunc(onRender);
+	old_vertices = pscene->output_vertices;
+	new_vertices = pscene->cloth->vertices;
+	for (int i = 0; i < old_vertices.size(); i++)//动态二维数组为5行6列，值全为0 
+	{
+		oldx = oldx + old_vertices[i].x;
+		oldy = oldy + old_vertices[i].y;
+		oldz = oldz + old_vertices[i].z;
+		newx = newx + new_vertices[i].x;
+		newy = newy + new_vertices[i].y;
+		newz = newz + new_vertices[i].z;
+	}
 	glutReshapeFunc(OnReshape);
 	glutIdleFunc(OnIdle);
 
@@ -152,6 +179,7 @@ void Scene::render()
 	glutCloseFunc(OnShutdown);
 
 	glutMainLoop();
+	*/
 }
 
 void Scene::RenderBuffer(VAO_Buffer vao_buffer)
@@ -266,17 +294,21 @@ void Scene::DrawGrid()
 }
 void Scene::RenderGPU_CUDA()
 {
-	if (pscene->simulation && start_sim)
+	//if (pscene->simulation && start_sim)
+	if (pscene->simulation && 1)
 	{
-		pscene->simulation->simulate(pscene->cloth);
+ 		pscene->simulation->simulate(pscene->cloth);
 	}
-	
+	/*
 	for (auto vao : pscene->obj_vaos)
-		pscene->RenderBuffer(vao);
+		pscene->RenderBuffer(vao);                  //此处调试启动仿真后增加断点
+	*/
 }
 void Scene::onRender()
 {
-	getFPS();
+	RenderGPU_CUDA();
+	/*
+	getFPS();                                       //此处调试启动仿真前去掉断点
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -298,7 +330,8 @@ void Scene::onRender()
 	draw_select_vertex();
 	RenderGPU_CUDA();
 
-	glutSwapBuffers();
+	glutSwapBuffers(); 
+	*/
 }
 void Scene::OnReshape(int nw, int nh)
 {

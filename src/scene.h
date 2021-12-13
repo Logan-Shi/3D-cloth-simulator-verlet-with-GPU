@@ -67,6 +67,7 @@ private:
 	static int selected_index;
 	static const int width = 1024, height = 1024;
 	static bool start_sim;
+	vector<glm::vec4> output_vertices;
 };
 
 

@@ -41,7 +41,10 @@ int main(int argc, char** argv)
 	main_scene->add_body(body);
 
 	main_scene->init_simulation();
-	main_scene->render();
+	for (int i = 0; i < 10; i++)
+	{
+		main_scene->render();
+	}
 
 	getchar();
 	return 0;

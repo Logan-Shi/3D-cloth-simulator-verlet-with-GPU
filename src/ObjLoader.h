@@ -29,6 +29,7 @@ public:
 	string texture_file;
 
 	vector<glm::vec4> vertices; 
+	vector<glm::vec3> onestep_vertices;
 	vector<glm::vec3> normals;
 	vector<glm::vec2> tex;
 	vector<Face> faces;
