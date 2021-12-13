@@ -41,9 +41,6 @@ public:
 	vector<unsigned int> vertex_indices;           // unified the index for render
 	vector<Face> faces;
 
-	GLuint g_textureID;
-	VAO_Buffer vbo;
-
 	vector<pair<string, unsigned int>> vertex_object;  //for vertices region division 
 	vector<pair<string, unsigned int>> face_group;
 

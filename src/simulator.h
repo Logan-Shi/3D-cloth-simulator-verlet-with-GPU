@@ -3,8 +3,6 @@
 #include "./bvh/bvh.h"
 #include "spring.h"
 #include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
-
 
 class Simulator
 {
@@ -13,7 +11,6 @@ public:
 	~Simulator();
 	Simulator(Mesh& cloth,Mesh& body);
 	void simulate(Mesh* cloth);
-	void cuda_update_vbo(Mesh* sim_cloth);
 	void update_vertex(glm::vec3 new_value, const unsigned int idx);
 
 
@@ -26,7 +23,6 @@ private:
 	void get_vertex_adjface(Mesh& sim_cloth, vector<unsigned int>& CSR_R, vector<unsigned int>& CSR_C_adjface);
 	void computeGridSize(unsigned int n, unsigned int blockSize, unsigned int &numBlocks, unsigned int &numThreads);
 	void swap_buffer();
-	void save(string file_name);
 
 private:
 	cudaGraphicsResource* d_vbo_array_resource;  //map OPENGL array buffer to cuda

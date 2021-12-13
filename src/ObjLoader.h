@@ -2,10 +2,7 @@
 #include <vector>
 #include <string>
 
-#include <GL/glew.h>
 #include <glm/glm.hpp>
-
-#include "vao_buffer.h"
 
 using namespace std;
 
@@ -22,7 +19,6 @@ public:
 	ObjLoader(const string file);
 
 public:
-	GLuint g_textureID;
 
 	string obj_file;                
 	string mtl_file;

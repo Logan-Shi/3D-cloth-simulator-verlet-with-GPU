@@ -7,8 +7,6 @@
 #include <device_launch_parameters.h>
 #include <glm/glm.hpp>
 
-
-
 //physics parameter
 __constant__ double spring_structure = 1000.0;
 __constant__ double spring_bend = 2.0;
