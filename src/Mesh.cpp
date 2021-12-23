@@ -106,8 +106,10 @@ void Mesh::vertex_extend(float dist)
 		for (int j = 0; j < 3; j++)
 		{
 			int v_index = faces[i].vertex_index[j];
+			//cout << v_index << endl;
 			if (visited[v_index] == false)
 			{
+				cout << faces[i].normal_index[j] << endl;
 				glm::vec3 n = normals[faces[i].normal_index[j]];
 				vertices[v_index] += dist * glm::vec4(n, 0);
 				visited[v_index] = true;

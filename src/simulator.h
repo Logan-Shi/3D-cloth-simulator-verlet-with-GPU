@@ -21,7 +21,7 @@ private:
 	void init_cloth(Mesh& cloth);
 	void init_spring(Mesh& cloth);
 	void build_bvh(Mesh& body);
-	void cuda_verlet(const unsigned int numParticles);
+	void cuda_verlet(const unsigned int numParticles, float sim_time);
 
 	void get_vertex_adjface(Mesh& sim_cloth, vector<unsigned int>& CSR_R, vector<unsigned int>& CSR_C_adjface);
 	void computeGridSize(unsigned int n, unsigned int blockSize, unsigned int &numBlocks, unsigned int &numThreads);
@@ -39,8 +39,10 @@ private:
 
 	// pre-malloc for vertices computation
 	int readID, writeID;
+	float* GPU_sim_time;
 	glm::vec3* x_cur[2];
 	glm::vec3* x_last[2];
+	glm::vec3* detect_force;
 
 	// point to x_cur or x_last, name a straightforward name to make code more clear
 	glm::vec3 * x_cur_in, *x_cur_out;
@@ -52,6 +54,8 @@ private:
 
 	// used in update_vbo, just to avoid calling malloc once cuda_update_vbo called
 	glm::vec3* d_face_normals;        // face(triangle) normal	
+	float simulation_time = 0;
+	float dt = 1 / 100.f;
 public:
 
 	//for bvh tree
