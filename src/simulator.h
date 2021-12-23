@@ -60,5 +60,6 @@ public:
 
 	//for bvh tree
 	BVHAccel* cuda_bvh;
+	BVHAccel* cuda_cloth_bvh;
 };
 

@@ -47,6 +47,9 @@ __constant__ float C_lift = 5;
 __constant__ float C_drag = 5;
 __constant__ float strong_wind = 0.1; 
 
+__constant__ float critical_length = 0.05;
+__constant__ float repul_stiffness = 200;
+
 
 __device__ float perlin(float x) {
 	// 整数x1和x2的坐标
@@ -284,7 +287,28 @@ __device__ glm::vec3 wind_velocity(glm::vec3 F_lift, glm::vec3 F_drag, float sim
 
 	return vec_wind;
 }
+__device__ glm::vec3 compute_selfcollide_force(unsigned int idx, glm::vec3* g_pos_in, unsigned int num)
+{
+	float dis = 1;
+	glm::vec3 repul_force = glm::vec3(0.0);
+	glm::vec3 pos2;
+	volatile glm::vec3 posData = g_pos_in[idx];
+	glm::vec3 pos = glm::vec3(posData.x, posData.y, posData.z);
+	for (int i = 0; i < num; i++)
+	{
+		volatile glm::vec3 posData = g_pos_in[i];
+		pos2 = glm::vec3(posData.x, posData.y, posData.z);
+		pos2 = pos2 - pos;
+		dis = glm::length(pos2);
+		if (dis > 0 && dis < critical_length)
+		{
+			repul_force -= repul_stiffness * (critical_length - dis) * glm::normalize(pos2);
+		}
+		
+	}
 
+	return repul_force;
+}
 
 __device__ void collision_response_projection(D_BVH bvh,
 	glm::vec3& force, glm::vec3& pos, glm::vec3& pos_old,
@@ -391,7 +415,7 @@ __global__ void update_vbo_pos(glm::vec4* pos_vbo, glm::vec3* pos_cur, const uns
 __global__ void verlet(glm::vec3 * g_pos_in, glm::vec3 * g_pos_old_in, glm::vec3 * g_pos_out, glm::vec3 * g_pos_old_out,
 						unsigned int* CSR_R_STR, s_spring* CSR_C_STR, unsigned int* CSR_R_BD, s_spring* CSR_C_BD,
 					    D_BVH bvh, glm::vec3* collision_force,
-						const unsigned int NUM_VERTICES, float * gpu_time, float sim_time, glm::vec3 * detect_force)
+						const unsigned int NUM_VERTICES, float * gpu_time, float sim_time, glm::vec3 * detect_force, D_BVH cloth_bvh)
 {
 	unsigned int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= NUM_VERTICES)
@@ -419,6 +443,7 @@ __global__ void verlet(glm::vec3 * g_pos_in, glm::vec3 * g_pos_old_in, glm::vec3
 	F_drag = compute_wind_force2_drag(index, g_pos_in, CSR_R_STR, CSR_C_STR, vel, pos, vec_wind);
 	force = force + F_lift + F_drag;
 	// wind_end
+	force += compute_selfcollide_force(index, g_pos_in, NUM_VERTICES);
 	glm::vec3 inelastic_force = glm::dot(collision_force[index], force) * collision_force[index];       //collision response force, if intersected, keep tangential
 	force -= inelastic_force;
 	glm::vec3 acc = force / mass;
@@ -426,6 +451,8 @@ __global__ void verlet(glm::vec3 * g_pos_in, glm::vec3 * g_pos_old_in, glm::vec3
 	pos = pos + pos - pos_old + acc * dt * dt;   
 	pos_old = tmp;
 	collision_response_projection(bvh, force, pos, pos_old, index, collision_force);
+	//if (sim_time>100)
+	//	collision_response_projection(cloth_bvh, force, pos, pos_old, index, collision_force);
 
 	g_pos_out[index] = pos;
 	g_pos_old_out[index] = pos_old;

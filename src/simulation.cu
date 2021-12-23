@@ -16,7 +16,7 @@ __global__ void compute_face_normal(glm::vec3* g_pos_in, unsigned int* cloth_ind
 __global__ void verlet(glm::vec3 * g_pos_in, glm::vec3 * g_pos_old_in, glm::vec3 * g_pos_out, glm::vec3 * g_pos_old_out,
 						unsigned int* CSR_R_STR, s_spring* CSR_C_STR, unsigned int* CSR_R_BD, s_spring* CSR_C_BD,
 						D_BVH bvh, glm::vec3* d_collision_force,
-						const unsigned int NUM_VERTICES, float * gpu_time, float sim_time, glm::vec3 * detect_force);  //verlet intergration
+						const unsigned int NUM_VERTICES, float * gpu_time, float sim_time, glm::vec3 * detect_force, D_BVH cloth_bvh);  //verlet intergration
 __global__ void update_vbo_pos(glm::vec4* pos_vbo, glm::vec3* pos_cur, const unsigned int NUM_VERTICES);
 __global__ void compute_vbo_normal(glm::vec3* normals, unsigned int* CSR_R, unsigned int* CSR_C_adjface_to_vertex, glm::vec3* face_normal, const unsigned int NUM_VERTICES);
 __global__ void compute_wind_force(unsigned int idx, glm::vec3* g_pos_in, unsigned int* CSR_R, s_spring* CSR_C_SPRING, glm::vec3 vel, glm::vec3 pos, glm::vec3 F_lift, glm::vec3 F_drag);
@@ -105,6 +105,10 @@ void Simulator::init_cloth(Mesh& sim_cloth)
 	safe_cuda(cudaMalloc((void**)&d_face_normals, sizeof(glm::vec3) * sim_cloth.faces.size()));    //face normal
 
 	safe_cuda(cudaGraphicsGLRegisterBuffer(&d_vbo_index_resource, sim_cloth.vbo.index_buffer, cudaGraphicsMapFlagsWriteDiscard));   	//register vbo
+
+	Mesh temp_cloth = sim_cloth;
+	temp_cloth.vertex_extend(0.005);
+	cuda_cloth_bvh = new BVHAccel(temp_cloth);
 }
 
 void Simulator::init_spring(Mesh& sim_cloth)
@@ -149,7 +153,6 @@ void Simulator::build_bvh(Mesh& body)
 void Simulator::simulate(Mesh* sim_cloth)
 {
 	//cuda kernel compute .........
-	
 	cuda_verlet(sim_cloth->vertices.size(), simulation_time);
 	simulation_time = simulation_time + dt;
 	cuda_update_vbo(sim_cloth);     // update array buffer for opengl
@@ -195,7 +198,7 @@ void Simulator::cuda_verlet(const unsigned int numParticles, float sim_time)
 	verlet <<< numBlocks, numThreads >>>(x_cur_in,x_last_in, x_cur_out, x_last_out,
 										CSR_R_structure, CSR_C_structure, CSR_R_bend, CSR_C_bend,
 										*cuda_bvh->d_bvh, d_collision_force,
-										numParticles, GPU_sim_time, sim_time, detect_force);
+										numParticles, GPU_sim_time, sim_time, detect_force, *cuda_cloth_bvh->d_bvh);
 	// stop the CPU until the kernel has been executed
 	cudaMemcpy(&test_time, GPU_sim_time, sizeof(float), cudaMemcpyDeviceToHost);
 	cudaMemcpy(&test_force, detect_force, sizeof(glm::vec3), cudaMemcpyDeviceToHost);
