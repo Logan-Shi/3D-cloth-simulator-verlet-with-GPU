@@ -19,7 +19,7 @@ __constant__ float dt = 1 / 100.0f;
 __constant__ float gravit_x = 0.0f;   // in y dir
 __constant__ float gravit_y = -0.00981f;   // in y dir
 __constant__ float gravit_z = 0.0f;   // in y dir
-__constant__ int perm[] = { 151,160,137,91,90,15,
+__constant__ int perm[256] = { 151,160,137,91,90,15,
  131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
  190, 6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
  88,237,149,56,87,174,20,125,136,171,168, 68,175,74,165,71,134,139,48,27,166,
@@ -34,10 +34,10 @@ __constant__ int perm[] = { 151,160,137,91,90,15,
  138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180 }; // perlin noise index & slope
 
 // random parameters
-__constant__ float alpha_wind = 0.01;
-__constant__ float beta_wind = 0.01;
+__constant__ float alpha_wind = 0.5;
+__constant__ float beta_wind = 0.5;
 __constant__ float lambda_wind = 0;
-__constant__ float split_time_wind = 30000.0;
+__constant__ float split_time_wind = 300000.0;
 // direction parameters
 __constant__ float thetav_wind = 45.0;
 __constant__ float thetal_wind = 45.0;
@@ -53,7 +53,7 @@ __constant__ float repul_stiffness = 200;
 
 __device__ float perlin(float x) {
 	// 整数x1和x2的坐标
-	int x1 = floor(x);
+	int x1 = floor(x)+1;
 	int x2 = x1 + 1;
 
 	// x1和x2的梯度值
@@ -89,9 +89,10 @@ __device__ glm::vec3 perlin_noise(glm::vec3 point)
 
 	return output_noise;
 }
-__device__ glm::vec3 compute_wind_force_lift(unsigned int idx, glm::vec3* g_pos_in, unsigned int* CSR_R, s_spring* CSR_C_SPRING, glm::vec3 vel, glm::vec3 pos)
+__device__ glm::vec3 compute_wind_force_lift(unsigned int idx, glm::vec3* g_pos_in, unsigned int* CSR_R, s_spring* CSR_C_SPRING, glm::vec3 vel, glm::vec3 pos, float sim_time)
 {
-	glm::vec3 vec_wind = strong_wind*glm::vec3(cos(thetav_wind * degree_to_rad) * sin(thetal_wind * degree_to_rad), cos(thetav_wind * degree_to_rad) * cos(thetal_wind * degree_to_rad), sin(thetav_wind * degree_to_rad));
+	float now_wind = (float) strong_wind * sin(sim_time / 10.0) + 0.2;
+	glm::vec3 vec_wind = now_wind * glm::vec3(cos(thetav_wind * degree_to_rad) * sin(thetal_wind * degree_to_rad), cos(thetav_wind * degree_to_rad) * cos(thetal_wind * degree_to_rad), sin(thetav_wind * degree_to_rad));
 	glm::vec3 relative_wind = vec_wind - vel;
 	int first_neigh = CSR_R[idx];
 	glm::vec3 final_normal = glm::vec3(0.0);
@@ -134,9 +135,10 @@ __device__ glm::vec3 compute_wind_force_lift(unsigned int idx, glm::vec3* g_pos_
 
 	return F_lift;
 }
-__device__ glm::vec3 compute_wind_force_drag(unsigned int idx, glm::vec3* g_pos_in, unsigned int* CSR_R, s_spring* CSR_C_SPRING, glm::vec3 vel, glm::vec3 pos)
+__device__ glm::vec3 compute_wind_force_drag(unsigned int idx, glm::vec3* g_pos_in, unsigned int* CSR_R, s_spring* CSR_C_SPRING, glm::vec3 vel, glm::vec3 pos, float sim_time)
 {
-	glm::vec3 vec_wind = strong_wind*glm::vec3(cos(thetav_wind * degree_to_rad) * sin(thetal_wind * degree_to_rad), cos(thetav_wind * degree_to_rad) * cos(thetal_wind * degree_to_rad), sin(thetav_wind * degree_to_rad));
+	float now_wind = (float) strong_wind * sin(sim_time / 10.0) + 0.2;
+	glm::vec3 vec_wind = now_wind * glm::vec3(cos(thetav_wind * degree_to_rad) * sin(thetal_wind * degree_to_rad), cos(thetav_wind * degree_to_rad) * cos(thetal_wind * degree_to_rad), sin(thetav_wind * degree_to_rad));
 	glm::vec3 relative_wind = vec_wind - vel;
 	int first_neigh = CSR_R[idx];
 	glm::vec3 final_normal = glm::vec3(0.0);
@@ -270,7 +272,8 @@ __device__ glm::vec3 compute_wind_force2_drag(unsigned int idx, glm::vec3* g_pos
 __device__ glm::vec3 wind_velocity(glm::vec3 F_lift, glm::vec3 F_drag, float sim_time)
 {
 	glm::vec3 vec_wind = strong_wind*glm::vec3(cos(thetav_wind * degree_to_rad) * sin(thetal_wind * degree_to_rad), cos(thetav_wind * degree_to_rad) * cos(thetal_wind * degree_to_rad), sin(thetav_wind * degree_to_rad));
-	
+	vec_wind += alpha_wind * perlin_noise(F_lift) + beta_wind * perlin_noise(F_drag);
+	/*
 	if (sim_time <= split_time_wind)
 	{
 		vec_wind += alpha_wind * sim_time * perlin_noise(F_lift) + beta_wind * sim_time * perlin_noise(F_drag);
@@ -285,6 +288,8 @@ __device__ glm::vec3 wind_velocity(glm::vec3 F_lift, glm::vec3 F_drag, float sim
 	}
 	
 
+	return vec_wind;
+	*/
 	return vec_wind;
 }
 __device__ glm::vec3 compute_selfcollide_force(unsigned int idx, glm::vec3* g_pos_in, unsigned int num)
@@ -436,8 +441,8 @@ __global__ void verlet(glm::vec3 * g_pos_in, glm::vec3 * g_pos_old_in, glm::vec3
 	force += compute_spring_force(index, g_pos_in, g_pos_old_in, CSR_R_STR, CSR_C_STR, pos, vel,spring_structure); // Compute structure spring force
 	force += compute_spring_force(index, g_pos_in, g_pos_old_in, CSR_R_BD, CSR_C_BD, pos, vel,spring_bend); // Compute bend spring force
 	// wind_begin
-	F_lift = compute_wind_force_lift(index, g_pos_in, CSR_R_STR, CSR_C_STR, vel, pos);
-	F_drag = compute_wind_force_drag(index, g_pos_in, CSR_R_STR, CSR_C_STR, vel, pos);
+	F_lift = compute_wind_force_lift(index, g_pos_in, CSR_R_STR, CSR_C_STR, vel, pos, sim_time);
+	F_drag = compute_wind_force_drag(index, g_pos_in, CSR_R_STR, CSR_C_STR, vel, pos, sim_time);
 	glm::vec3 vec_wind = wind_velocity(F_lift, F_drag, sim_time);
 	F_lift = compute_wind_force2_lift(index, g_pos_in, CSR_R_STR, CSR_C_STR, vel, pos, vec_wind);
 	F_drag = compute_wind_force2_drag(index, g_pos_in, CSR_R_STR, CSR_C_STR, vel, pos, vec_wind);
